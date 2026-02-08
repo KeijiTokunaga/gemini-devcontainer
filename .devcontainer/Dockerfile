@@ -81,4 +81,15 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 # Install Claude
 RUN npm install -g @google/gemini-cli
 
+USER root
+
+# sudo をインストール（入っていない場合）し、node ユーザーを sudo グループに追加
+# さらに node ユーザーがパスワードなしで sudo を使えるように設定
+RUN apt-get update && apt-get install -y sudo \
+    && echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node \
+    && chmod 0440 /etc/sudoers.d/node
+
+# 最後にまた node ユーザーに戻す
+USER node
+
 
