@@ -1,0 +1,61 @@
+name: Weekly Health Check
+
+on:
+  schedule:
+    - cron: '0 1 * * 1'  # 毎週月曜 JST 10:00 (UTC 01:00)
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build fresh (no cache)
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .devcontainer
+          file: .devcontainer/Dockerfile
+          push: false
+          no-cache: true
+          tags: gemini-devcontainer:weekly
+
+      - name: Run smoke test
+        if: success()
+        run: |
+          docker run --rm gemini-devcontainer:weekly bash -c "
+            node --version && npm --version && git --version
+            echo 'Weekly health check: PASSED'
+          "
+
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `⚠️ Weekly DevContainer health check failed (${new Date().toISOString().slice(0,10)})`,
+              body: [
+                '## 自動検知: DevContainer ビルドエラー',
+                '',
+                'ベースイメージの更新または依存関係の変更により、ビルドが失敗しました。',
+                '',
+                `**失敗したワークフロー:** [確認する](${runUrl})`,
+                '',
+                '### 対応手順',
+                '1. 上記リンクのログを確認',
+                '2. ベースイメージのバージョンを確認',
+                '3. `.devcontainer/Dockerfile` を更新してPR作成',
+              ].join('\n'),
+              labels: ['ci-failure', 'devcontainer'],
+            });

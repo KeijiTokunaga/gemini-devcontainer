@@ -1,0 +1,60 @@
+name: Docker Build Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.devcontainer/**'
+  pull_request:
+    paths:
+      - '.devcontainer/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build DevContainer image
+        uses: docker/build-push-action@v5
+        with:
+          context: .devcontainer
+          file: .devcontainer/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: gemini-devcontainer:ci-${{ github.sha }}
+
+      - name: Verify image was created
+        run: docker image inspect gemini-devcontainer:ci-${{ github.sha }}
+
+      - name: Check installed tools inside image
+        run: |
+          docker run --rm gemini-devcontainer:ci-${{ github.sha }} bash -c "
+            set -e
+            echo '=== OS Info ==='
+            cat /etc/os-release | head -3
+
+            echo '=== Node.js ==='
+            node --version 2>/dev/null || echo 'node: not found'
+
+            echo '=== npm ==='
+            npm --version 2>/dev/null || echo 'npm: not found'
+
+            echo '=== Gemini CLI ==='
+            gemini --version 2>/dev/null \
+              || npx --yes @google/gemini-cli --version 2>/dev/null \
+              || echo 'gemini: not found'
+
+            echo '=== git ==='
+            git --version 2>/dev/null || echo 'git: not found'
+
+            echo '=== All checks complete ==='
+          "
