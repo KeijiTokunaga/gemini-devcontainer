@@ -1,0 +1,33 @@
+name: Extension CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'vscode-emacslike-occur/**'
+  pull_request:
+    paths:
+      - 'vscode-emacslike-occur/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm install
+        working-directory: vscode-emacslike-occur
+      - name: Run lint
+        run: npm run lint
+        working-directory: vscode-emacslike-occur
+      - name: Run unit tests
+        run: npm run test:unit
+        working-directory: vscode-emacslike-occur
+      - name: Compile
+        run: npm run compile
+        working-directory: vscode-emacslike-occur
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
