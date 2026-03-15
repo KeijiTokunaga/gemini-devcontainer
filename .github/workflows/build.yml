@@ -25,9 +25,10 @@ jobs:
       - name: Build DevContainer image
         uses: docker/build-push-action@v5
         with:
-          context: .devcontainer
+          context: .
           file: .devcontainer/Dockerfile
           push: false
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: gemini-devcontainer:ci-${{ github.sha }}
@@ -43,18 +44,23 @@ jobs:
             cat /etc/os-release | head -3
 
             echo '=== Node.js ==='
-            node --version 2>/dev/null || echo 'node: not found'
+            node --version || echo 'node: not found'
 
             echo '=== npm ==='
-            npm --version 2>/dev/null || echo 'npm: not found'
+            npm --version || echo 'npm: not found'
 
             echo '=== Gemini CLI ==='
-            gemini --version 2>/dev/null \
-              || npx --yes @google/gemini-cli --version 2>/dev/null \
-              || echo 'gemini: not found'
+            # Check for 'gemini' command which is provided by @google/gemini-cli
+            if command -v gemini &> /dev/null; then
+              gemini --version
+            elif npx --yes @google/gemini-cli --version &> /dev/null; then
+              npx --yes @google/gemini-cli --version
+            else
+              echo 'gemini: not found'
+            fi
 
             echo '=== git ==='
-            git --version 2>/dev/null || echo 'git: not found'
+            git --version || echo 'git: not found'
 
             echo '=== All checks complete ==='
           "
