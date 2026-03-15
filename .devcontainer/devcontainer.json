@@ -40,11 +40,17 @@
   },
   "remoteUser": "node",
   "mounts": [
+    // ユーザーの .env ファイルをマウントする場合（任意）
+    // "source=${localWorkspaceFolder}/.env,target=/workspace/.env,type=bind,consistency=cached"
   ],
   "containerEnv": {
     "NODE_OPTIONS": "--max-old-space-size=4096",
-    "POWERLEVEL9K_DISABLE_GITSTATUS": "true"
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
+    // ホスト環境の API キーを引き継ぐための設定
+    "GOOGLE_GENAI_API_KEY": "${localEnv:GOOGLE_GENAI_API_KEY}",
+    "GEMINI_API_KEY": "${localEnv:GEMINI_API_KEY}",
+    "GEMINI_PROJECT_ROOT": "/workspace"
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
-  "workspaceFolder": "/workspace",
+  "workspaceFolder": "/workspace"
 }

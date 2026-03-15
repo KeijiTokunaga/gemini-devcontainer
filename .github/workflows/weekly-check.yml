@@ -21,7 +21,7 @@ jobs:
         id: build
         uses: docker/build-push-action@v5
         with:
-          context: .devcontainer
+          context: .
           file: .devcontainer/Dockerfile
           push: false
           no-cache: true
@@ -44,18 +44,17 @@ jobs:
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `⚠️ Weekly DevContainer health check failed (${new Date().toISOString().slice(0,10)})`,
+              title: `🚨 Weekly Health Check Failed (${new Date().toISOString().slice(0, 10)})`,
               body: [
-                '## 自動検知: DevContainer ビルドエラー',
+                '## 自動検知: Weekly Health Check が失敗しました',
                 '',
-                'ベースイメージの更新または依存関係の変更により、ビルドが失敗しました。',
+                'ベースイメージの更新や依存関係の変更により、ビルドまたはテストが失敗した可能性があります。',
                 '',
-                `**失敗したワークフロー:** [確認する](${runUrl})`,
+                `**実行ログ:** [こちらを確認](${runUrl})`,
                 '',
-                '### 対応手順',
-                '1. 上記リンクのログを確認',
-                '2. ベースイメージのバージョンを確認',
-                '3. `.devcontainer/Dockerfile` を更新してPR作成',
+                '### 推奨される対応',
+                '1. 実行ログからエラー箇所を特定してください。',
+                '2. `.devcontainer/Dockerfile` やワークフロー定義を修正し、修正PRを作成してください。',
               ].join('\n'),
-              labels: ['ci-failure', 'devcontainer'],
+              labels: ['ci-failure', 'bug']
             });
