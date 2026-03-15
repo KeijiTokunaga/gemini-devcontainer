@@ -18,26 +18,23 @@ jobs:
       - name: Install devcontainer CLI
         run: npm install -g @devcontainers/cli
 
-      - name: Build devcontainer
+      - name: Build and up devcontainer
         run: |
-          devcontainer build \
-            --workspace-folder . \
-            --image-name gemini-devcontainer:smoke-${{ github.sha }}
+          devcontainer up \
+            --workspace-folder $(pwd)
 
       - name: Verify tools inside devcontainer
         run: |
           devcontainer exec \
-            --workspace-folder . \
+            --workspace-folder $(pwd) \
             -- bash -c "
               set -e
               echo '=============================='
               echo 'DevContainer Tool Check'
               echo '=============================='
-              echo '[node]'   && node --version
-              echo '[npm]'    && npm --version
-              echo '[git]'    && git --version
-              echo '[gemini]' && gemini --version 2>/dev/null \
-                || npx @google/gemini-cli --version 2>/dev/null \
-                || echo 'gemini: not installed (OAuth認証が必要なため正常)'
+              echo -n '[node]   ' && node --version
+              echo -n '[npm]    ' && npm --version
+              echo -n '[git]    ' && git --version
+              echo -n '[gemini] ' && (gemini --version || echo 'not found')
               echo '=============================='
             "
