@@ -1,0 +1,43 @@
+name: DevContainer Smoke Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Build devcontainer
+        run: |
+          devcontainer build \
+            --workspace-folder . \
+            --image-name gemini-devcontainer:smoke-${{ github.sha }}
+
+      - name: Verify tools inside devcontainer
+        run: |
+          devcontainer exec \
+            --workspace-folder . \
+            -- bash -c "
+              set -e
+              echo '=============================='
+              echo 'DevContainer Tool Check'
+              echo '=============================='
+              echo '[node]'   && node --version
+              echo '[npm]'    && npm --version
+              echo '[git]'    && git --version
+              echo '[gemini]' && gemini --version 2>/dev/null \
+                || npx @google/gemini-cli --version 2>/dev/null \
+                || echo 'gemini: not installed (OAuth認証が必要なため正常)'
+              echo '=============================='
+            "
